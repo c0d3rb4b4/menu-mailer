@@ -242,9 +242,9 @@ class MenuMailer:
         )
         html_body = (
             "<html><body>"
+            '<img src="cid:menu-image" alt="School menu">'
             f"<p>School menu for {self._format_display_date(menu_date)}.</p>"
             f'<p><a href="{menu_link}">Open calendar view</a></p>'
-            '<img src="cid:menu-image" alt="School menu">'
             "</body></html>"
         )
 
