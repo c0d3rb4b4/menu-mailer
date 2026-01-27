@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     mail_from: str = ""
     mail_to: str = ""
 
+    menu_web_base_url: str = "http://192.168.68.84:8080"
+
     bind_host: str = "0.0.0.0"
     bind_port: int = 8082
 

@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlencode, urlparse, urlunparse
 from zoneinfo import ZoneInfo
 
 from src.config import Settings
@@ -227,6 +228,7 @@ class MenuMailer:
     def _build_message(
         self, menu_date: date, image_path: Path, recipients: list[str]
     ) -> MIMEMultipart:
+        menu_link = self._build_menu_link(menu_date)
         subject = self._format_subject(menu_date)
         message = MIMEMultipart("related")
         message["Subject"] = subject
@@ -234,10 +236,14 @@ class MenuMailer:
         message["To"] = ", ".join(recipients)
 
         alternative = MIMEMultipart("alternative")
-        text_body = f"School menu for {menu_date.isoformat()} is attached."
+        text_body = (
+            f"School menu for {menu_date.isoformat()} is attached.\n"
+            f"View in browser: {menu_link}"
+        )
         html_body = (
             "<html><body>"
             f"<p>School menu for {self._format_display_date(menu_date)}.</p>"
+            f'<p><a href="{menu_link}">Open calendar view</a></p>'
             '<img src="cid:menu-image" alt="School menu">'
             "</body></html>"
         )
@@ -253,6 +259,21 @@ class MenuMailer:
         message.attach(image)
 
         return message
+
+    def _build_menu_link(self, menu_date: date) -> str:
+        base_url = self._settings.menu_web_base_url.rstrip("/")
+        parsed = urlparse(base_url)
+        query = urlencode({"date": menu_date.isoformat()})
+        return urlunparse(
+            (
+                parsed.scheme,
+                parsed.netloc,
+                parsed.path or "/",
+                parsed.params,
+                query,
+                parsed.fragment,
+            )
+        )
 
     def _format_subject(self, menu_date: date) -> str:
         return f"School menu - {self._format_display_date(menu_date)}"

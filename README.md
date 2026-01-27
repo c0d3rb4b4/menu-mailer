@@ -73,6 +73,7 @@ The menu image is embedded directly in the email body.
 | `SMTP_USE_TLS` | true / false |
 | `MAIL_FROM` | From address |
 | `MAIL_TO` | Comma-separated recipients |
+| `MENU_WEB_BASE_URL` | Base URL for menu-web viewer |
 
 ---
 
@@ -85,6 +86,7 @@ The menu image is embedded directly in the email body.
 - **Body**:
   - Short text
   - Menu image embedded inline
+  - Link to menu-web for the date
 - **Fallback**:
   - Plain text for non-HTML clients
 
@@ -109,6 +111,7 @@ services:
       SMTP_PASSWORD: app-password
       MAIL_FROM: example@gmail.com
       MAIL_TO: you@gmail.com,partner@gmail.com
+      MENU_WEB_BASE_URL: http://192.168.68.84:8080
 ```
 
 ---
