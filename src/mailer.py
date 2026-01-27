@@ -122,15 +122,6 @@ class MenuMailer:
         except Exception:
             self._logger.exception("Failed to refresh menu image index")
 
-        if self._last_sent_date == today:
-            return {
-                "status": "already_sent",
-                "date": today.isoformat(),
-                "last_sent_at": self._last_sent_at.isoformat()
-                if self._last_sent_at
-                else None,
-            }
-
         image_path = self._index.get_image_path(today.isoformat())
         if image_path is None or not image_path.exists():
             detail = f"Menu image not found for {today.isoformat()}"
