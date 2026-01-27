@@ -32,9 +32,19 @@ The menu image is embedded directly in the email body.
 1. Service starts and indexes menu images
 2. Periodically checks current local time
 3. At send time:
-   - looks for today’s menu image
+   - looks for today's menu image
    - if found, sends email
    - if not found, retries for a configured window
+
+---
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/status` | GET | Last send status and last scan timestamp |
+| `/send-now` | POST | Send today's menu email immediately |
 
 ---
 

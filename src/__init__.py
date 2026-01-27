@@ -1,0 +1,1 @@
+"""menu-mailer package."""

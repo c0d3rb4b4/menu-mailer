@@ -1,0 +1,22 @@
+services:
+  menu-mailer:
+    build: .
+    container_name: menu-mailer
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./config/app.env
+    volumes:
+      - ./config:/app/config:ro
+      - /mnt/mediawall/mediawall/menu:/mnt/menu-images:ro
+    labels:
+      - "logging=promtail"
+      - "service=menu-mailer"
+      - "environment=production"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

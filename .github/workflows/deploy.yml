@@ -1,0 +1,125 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Sync files to service server
+        run: |
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude '__pycache__' \
+            --exclude '*.pyc' \
+            --exclude '.pytest_cache' \
+            --exclude 'config/app.env' \
+            ./ ${{ secrets.DEPLOY_USER }}@192.168.68.84:~/menu-mailer/
+
+      - name: Ensure config file exists
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@192.168.68.84 << 'EOF'
+          cd ~/menu-mailer
+          mkdir -p config
+          
+          # Create app.env from example if it doesn't exist
+          if [ ! -f config/app.env ]; then
+            echo "Creating config/app.env from example..."
+            if [ -f config/app.env.example ]; then
+              cp config/app.env.example config/app.env
+              echo "WARNING: Using default config - please update config/app.env with real values"
+            else
+              echo "Creating minimal config/app.env..."
+              cat > config/app.env << 'ENVEOF'
+          MENU_IMAGE_DIR=/mnt/menu-images
+          SEND_HOUR=7
+          SEND_MINUTE=0
+          TIMEZONE=Europe/London
+          SKIP_WEEKENDS=true
+          RETRY_WINDOW_MINUTES=60
+          SCAN_INTERVAL_SECONDS=300
+          
+          SMTP_HOST=smtp.example.com
+          SMTP_PORT=587
+          SMTP_USERNAME=example@gmail.com
+          SMTP_PASSWORD=app-password
+          SMTP_USE_TLS=true
+          MAIL_FROM=example@gmail.com
+          MAIL_TO=you@gmail.com
+          
+          LOG_LEVEL=INFO
+          ENVEOF
+            fi
+          else
+            echo "config/app.env already exists"
+          fi
+          
+          echo "Config file contents (secrets redacted):"
+          cat config/app.env | grep -v PASSWORD | grep -v API_KEY || true
+          EOF
+
+      - name: Deploy via SSH
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@192.168.68.84 << 'EOF'
+          cd ~/menu-mailer
+          
+          echo "=== Docker Compose Config ==="
+          docker compose config --quiet && echo "Config valid" || echo "Config invalid"
+          
+          echo "=== Stopping existing container ==="
+          docker compose down || true
+          
+          echo "=== Building image ==="
+          docker compose build
+          
+          echo "=== Starting container ==="
+          docker compose up -d
+          
+          echo "=== Container status ==="
+          docker compose ps -a
+          EOF
+
+      - name: Wait for services to be healthy
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@192.168.68.84 << 'EOF'
+          echo "Waiting for menu-mailer service to be ready..."
+          
+          # First check if container is running
+          if ! docker ps --format '{{.Names}}' | grep -q '^menu-mailer$'; then
+            echo "ERROR: Container menu-mailer is not running!"
+            echo "=== Container logs ==="
+            docker compose -f ~/menu-mailer/docker-compose.yml logs --tail 100
+            exit 1
+          fi
+          
+          for i in {1..30}; do
+            if docker exec menu-mailer python -c "import urllib.request; urllib.request.urlopen('http://localhost:8082/health')" > /dev/null 2>&1; then
+              echo "Service is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/30: Service not ready yet, waiting..."
+            sleep 2
+          done
+          
+          echo "Service failed to become healthy"
+          echo "=== Container status ==="
+          docker ps -a --filter name=menu-mailer
+          echo "=== Container logs ==="
+          docker compose -f ~/menu-mailer/docker-compose.yml logs --tail 100
+          exit 1
+          EOF
+
+      - name: Health Check
+        run: |
+          echo "Performing external health check..."
+          curl -sf http://192.168.68.84:8082/health || exit 1
+          echo "Health check passed!"
