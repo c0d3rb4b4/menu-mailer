@@ -90,6 +90,7 @@ The menu image is embedded directly in the email body.
   - Short text
   - Menu image embedded inline
   - Link to menu-web for the date
+  - ntfy notification includes the menu image preview
 - **Fallback**:
   - Plain text for non-HTML clients
 

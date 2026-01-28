@@ -270,6 +270,10 @@ class MenuMailer:
             )
         )
 
+    def _build_menu_image_url(self, menu_date: date) -> str:
+        base_url = self._settings.menu_web_base_url.rstrip("/")
+        return f"{base_url}/api/image/{menu_date.isoformat()}"
+
     def _notify_sent(self, menu_date: date) -> None:
         try:
             self._send_ntfy(menu_date)
@@ -285,6 +289,7 @@ class MenuMailer:
         topic = topic.lstrip("/")
         url = f"{base_url.rstrip('/')}/{topic}"
         menu_link = self._build_menu_link(menu_date)
+        menu_image_url = self._build_menu_image_url(menu_date)
         display_date = self._format_display_date(menu_date)
         message = f"School menu for {display_date} is ready.\n{menu_link}"
 
@@ -296,6 +301,8 @@ class MenuMailer:
         request.add_header("Content-Type", "text/plain; charset=utf-8")
         request.add_header("Title", f"School menu - {display_date}")
         request.add_header("Click", menu_link)
+        request.add_header("Attach", menu_image_url)
+        request.add_header("Filename", f"menu-{menu_date.isoformat()}.png")
 
         with urllib.request.urlopen(request, timeout=10) as response:
             response.read()
