@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     mail_to: str = ""
 
     menu_web_base_url: str = "http://192.168.68.84:8080"
+    ntfy_base_url: str = "http://192.168.68.84:8090"
+    ntfy_topic: str = "menu-mailer"
 
     bind_host: str = "0.0.0.0"
     bind_port: int = 8082

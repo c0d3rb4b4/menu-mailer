@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import smtplib
+import urllib.request
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -110,6 +111,7 @@ class MenuMailer:
         self._last_error = ""
         self._last_handled_date = today
         self._logger.info("Menu email sent for %s", today.isoformat())
+        self._notify_sent(today)
 
     def send_now(self) -> dict:
         """Send the menu email immediately for today's date."""
@@ -147,6 +149,8 @@ class MenuMailer:
         self._last_result = "sent"
         self._last_error = ""
         self._last_handled_date = today
+
+        self._notify_sent(today)
 
         return {
             "status": "sent",
@@ -265,6 +269,36 @@ class MenuMailer:
                 parsed.fragment,
             )
         )
+
+    def _notify_sent(self, menu_date: date) -> None:
+        try:
+            self._send_ntfy(menu_date)
+        except Exception:
+            self._logger.exception("Failed to send ntfy notification")
+
+    def _send_ntfy(self, menu_date: date) -> None:
+        base_url = self._settings.ntfy_base_url.strip()
+        topic = self._settings.ntfy_topic.strip()
+        if not base_url or not topic:
+            return
+
+        topic = topic.lstrip("/")
+        url = f"{base_url.rstrip('/')}/{topic}"
+        menu_link = self._build_menu_link(menu_date)
+        display_date = self._format_display_date(menu_date)
+        message = f"School menu for {display_date} is ready.\n{menu_link}"
+
+        request = urllib.request.Request(
+            url,
+            data=message.encode("utf-8"),
+            method="POST",
+        )
+        request.add_header("Content-Type", "text/plain; charset=utf-8")
+        request.add_header("Title", f"School menu - {display_date}")
+        request.add_header("Click", menu_link)
+
+        with urllib.request.urlopen(request, timeout=10) as response:
+            response.read()
 
     def _format_subject(self, menu_date: date) -> str:
         return f"School menu - {self._format_display_date(menu_date)}"

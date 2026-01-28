@@ -10,6 +10,7 @@ The menu image is embedded directly in the email body.
 ## Features
 
 - Sends email once per day at a configured local time
+- Sends ntfy notifications when a menu email is sent
 - Inline image preview in email clients
 - Automatically skips weekends (optional)
 - Retries safely if image appears slightly late
@@ -74,6 +75,8 @@ The menu image is embedded directly in the email body.
 | `MAIL_FROM` | From address |
 | `MAIL_TO` | Comma-separated recipients |
 | `MENU_WEB_BASE_URL` | Base URL for menu-web viewer |
+| `NTFY_BASE_URL` | Base URL for ntfy server |
+| `NTFY_TOPIC` | Topic name for ntfy notifications |
 
 ---
 
@@ -112,6 +115,8 @@ services:
       MAIL_FROM: example@gmail.com
       MAIL_TO: you@gmail.com,partner@gmail.com
       MENU_WEB_BASE_URL: http://192.168.68.84:8080
+      NTFY_BASE_URL: http://192.168.68.84:8090
+      NTFY_TOPIC: menu-mailer
 ```
 
 ---
