@@ -291,7 +291,7 @@ class MenuMailer:
         menu_link = self._build_menu_link(menu_date)
         menu_image_url = self._build_menu_image_url(menu_date)
         display_date = self._format_display_date(menu_date)
-        message = f"School menu for {display_date}"
+        message = f""
 
         request = urllib.request.Request(
             url,
